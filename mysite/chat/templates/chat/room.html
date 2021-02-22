@@ -26,12 +26,12 @@
 <script>try{Typekit.load({ async: true });}catch(e){}</script>
 <link rel='stylesheet prefetch' href='https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css'><link rel='stylesheet prefetch' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.2/css/font-awesome.min.css'>
 
-<!--<link rel="stylesheet" href="{% static 'style.css' %}">-->
+<!--  <link rel="stylesheet" href="{% static 'style.css' %}">-->
 </head>
 
 
 <body>
-  <!--
+<!--
 <div id="frame">
 	<div id="sidepanel">
 		<div id="profile">
@@ -120,33 +120,43 @@
 				 <i class="fa fa-instagram" aria-hidden="true"></i>
 			</div>
 		</div>
-		<div class="messages">
-			
-		</div>
-		<div class="message-input">
-			<div class="wrap">
 
-			
-			</div>
-		</div>
+  
+
+
+		
+
+
+
 	</div>
-</div>
--->
+</div>-->
 
-  <ul id="chat-log">
+
+    <!--<div class="messages">-->
+      <ul id="chat-log">
         <li class="sent">
-          <!--<img src="http://emilcarlsson.se/assets/mikeross.png" alt="" />-->
-          <p></p>
+          <!--<img src="http://emilcarlsson.se/assets/mikeross.png" alt="" />
+          <p></p>-->
         </li>
         <li class="replies">
-          <!--<img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />-->
-          <p></p>
+          <!--<img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />
+          <p></p>-->
         </li>
       </ul>
+    <!--</div>-->
 
-<input id="chat-message-input" type="text" placeholder="Write your message...">
-<i class="fa fa-paperclip attachment" aria-hidden="true"></i>
-<button id="chat-message-submit" class="submit"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
+
+    <!--<div class="message-input">
+      <div class="wrap">-->
+        <input id="chat-message-input" type="text" placeholder="Write your message...">
+        <i class="fa fa-paperclip attachment" aria-hidden="true"></i>
+        <button id="chat-message-submit" class="submit"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
+      <!--</div>
+    </div>-->
+
+  
+
+
 
 
 
@@ -192,9 +202,11 @@
       } else {
         for(let i=0; i<data['messages'].length; i++){
           createMessage(data['messages'][i]);
+          console.log("Fetch");
         }
       }
   };
+
   function createMessage(data){
     let author = data['author'];
 
@@ -202,12 +214,15 @@
     //let imgTag = document.createElement('img');
     let pTag = document.createElement('p');
     pTag.textContent = data['message'];
+    console.log("FROm admin");
+    console.log(data);
 
-    console.log(author, data.content)
+
     //imgTag.src = 'http://emilcarlsson.se/assets/mikeross.png';
 
     if(author === userName){
       msgListTag.class = 'sent';
+      //msgListTag.style.cssText = 'color: blue;'
     } else {
 
       msgListTag.className = 'replies';
@@ -234,7 +249,8 @@
   document.querySelector('#chat-message-submit').onclick = function(e) {
       const messageInputDom = document.querySelector('#chat-message-input');
       const message = messageInputDom.value;
-
+      console.log("MEssage");
+      console.log(message);
       chatSocket.send(JSON.stringify({
           'command': 'new_message',
           'message': message,
