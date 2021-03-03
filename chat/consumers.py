@@ -4,6 +4,12 @@ from channels.generic.websocket import WebsocketConsumer
 from .models import Message
 from django.contrib.auth import get_user_model
 
+
+import sys
+from PIL import Image
+import io
+
+
 User = get_user_model()
 class ChatConsumer(WebsocketConsumer):
 
@@ -51,6 +57,8 @@ class ChatConsumer(WebsocketConsumer):
 
     def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
+        self.user = self.scope['user']
+        print("user", self.user)
         self.room_group_name = 'chat_%s' % self.room_name
         # Join room group
         async_to_sync(self.channel_layer.group_add)(
@@ -70,6 +78,16 @@ class ChatConsumer(WebsocketConsumer):
 
     # Receive message from WebSocket
     def receive(self, text_data):
+        '''
+        if 'bytes_data' in kwargs.keys():
+            stream = io.BytesIO(kwargs['bytes_data'])
+            image = Image.open(stream).convert("RGBA")
+            stream.close()
+            image.save("static/foto.png")
+            #print(kwargs['bytes_data'].decode("utf-8"))
+            print("File uploaad binary data")
+        print(kwargs)
+        '''
         data = json.loads(text_data)
         self.commands[data['command']](self, data)
 
