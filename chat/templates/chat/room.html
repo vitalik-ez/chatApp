@@ -273,6 +273,8 @@
   function sendFile(){
     chatSocket.binaryType = "arraybuffer";
     let file = document.getElementById('filename').files[0];
+    console.log(file.type);
+    console.log(file.name);
     let reader = new FileReader();
     let rawData = new ArrayBuffer();
     reader.loadend = function() {
@@ -280,10 +282,15 @@
             }
     reader.onload = function(e) {
       rawData = e.target.result;
-      console.log("data", rawData);
-      chatSocket.send(rawData);
+
+      chatSocket.send(JSON.stringify({
+        "author": userName,
+        "type": file.type,
+        "name": file.name,
+        "bytes_data": String.fromCharCode.apply(null, new Uint32Array(rawData))
+      }));
       console.log("file pass");
-       alert("the File has been transferred.");
+      alert("the File has been transferred.");
     }
 
     reader.readAsArrayBuffer(file);

@@ -9,6 +9,10 @@ import sys
 from PIL import Image
 import io
 
+import boto3
+from django.conf import settings
+#from django.core.files.uploadedfile import InMemoryUploadedFile
+
 
 User = get_user_model()
 class ChatConsumer(WebsocketConsumer):
@@ -77,19 +81,37 @@ class ChatConsumer(WebsocketConsumer):
 
 
     # Receive message from WebSocket
-    def receive(self, text_data):
-        '''
-        if 'bytes_data' in kwargs.keys():
-            stream = io.BytesIO(kwargs['bytes_data'])
+    def receive(self, *args, **kwargs):
+        print("list", args)
+        print(kwargs.keys())
+        #if 'text_data' in kwargs.keys():
+        #    print(kwargs['text_data'])
+
+        
+        if 'bytes_data' in kwargs['text_data']:
+            print(kwargs['text_data'])
+
+            #image
+            stream = io.BytesIO(kwargs['text_data']['bytes_data'])
             image = Image.open(stream).convert("RGBA")
-            stream.close()
             image.save("static/foto.png")
+            stream.close()
+
+
+            s3 = boto3.client('s3', region_name='eu-central-1', 
+                                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID, 
+                                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+            s3.upload_file(Filename='static/foto.png', Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key='upload/newfile.png')
+            filename = 'newfile.png'
+            s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.eu-central-1.amazonaws.com/upload/{filename}"
+            #kwargs['text_data'] = json.dumps({"command":"new_message","message": s3_url,"from":"admin"})
+            data = {"command":"new_message","message": s3_url,"from":"admin"}
             #print(kwargs['bytes_data'].decode("utf-8"))
-            print("File uploaad binary data")
-        print(kwargs)
-        '''
-        data = json.loads(text_data)
-        self.commands[data['command']](self, data)
+        else:
+            data = json.loads(kwargs['text_data'])
+
+
+        #self.commands[data['command']](self, data)
 
 
     def send_chat_message(self, message):
