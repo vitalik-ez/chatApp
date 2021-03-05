@@ -12,7 +12,7 @@ import io
 import boto3
 from django.conf import settings
 #from django.core.files.uploadedfile import InMemoryUploadedFile
-
+import base64
 
 User = get_user_model()
 class ChatConsumer(WebsocketConsumer):
@@ -82,17 +82,16 @@ class ChatConsumer(WebsocketConsumer):
 
     # Receive message from WebSocket
     def receive(self, *args, **kwargs):
-        print("list", args)
         print(kwargs.keys())
-        #if 'text_data' in kwargs.keys():
-        #    print(kwargs['text_data'])
-
+        print()
+        self.scope['session']['type_file'] = 'txt'
+        #del self.scope['session']['type_file']
+        if 'type_file' in self.scope['session']:
+             print('yes')
         
-        if 'bytes_data' in kwargs['text_data']:
-            print(kwargs['text_data'])
-
+        if 'bytes_data' in kwargs.keys():
             #image
-            stream = io.BytesIO(kwargs['text_data']['bytes_data'])
+            stream = io.BytesIO(kwargs['bytes_data'])
             image = Image.open(stream).convert("RGBA")
             image.save("static/foto.png")
             stream.close()
@@ -110,7 +109,7 @@ class ChatConsumer(WebsocketConsumer):
         else:
             data = json.loads(kwargs['text_data'])
 
-
+        
         #self.commands[data['command']](self, data)
 
 

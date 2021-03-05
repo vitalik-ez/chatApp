@@ -18,7 +18,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 
 import chat.routing
 
-
+from channels.sessions import SessionMiddlewareStack
 
 application = ProtocolTypeRouter({
   "http": django_asgi_app,
