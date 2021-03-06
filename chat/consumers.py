@@ -11,14 +11,14 @@ import io
 
 import boto3
 from django.conf import settings
-#from django.core.files.uploadedfile import InMemoryUploadedFile
-import base64
+from fpdf import FPDF 
+from base64 import b64decode
 
 User = get_user_model()
+
 class ChatConsumer(WebsocketConsumer):
 
     def fetch_messages(self, data):
-        print("Data in fetch", data)
         messages = Message.last_10_messages()
         content = {
             'messages': self.messages_to_json(messages),
@@ -28,10 +28,11 @@ class ChatConsumer(WebsocketConsumer):
     def new_message(self, data):
         author = data['from']
         author_user = User.objects.filter(username=author)[0]
-        message = Message.objects.create(author=author_user, content=data['message'])
+        file_name = data['filename'] if 'filename' in data else 'null'
+        message = Message.objects.create(author=author_user, content=data['message'], filename=file_name)
         content = {
             'command': 'new_message',
-            'message': self.message_to_json(message)
+            'message': self.message_to_json(message),
         }
         self.send_chat_message(content)
 
@@ -48,13 +49,36 @@ class ChatConsumer(WebsocketConsumer):
             'author': message.author.username,
             'message': message.content,
             'timestamp': str(message.timestamp),
+            'filename': message.filename
         }
 
+    def save_session(self, data):
+        self.scope['session']['type_file'] = data['type']
+        self.scope['session']['author'] = data['author']
+        self.scope['session']['name'] = data['name']
+
+
+    def save_file(self, data):
+        with open("static/" + self.scope['session']['name'], "wb") as f:
+            f.write(data)
+        s3 = boto3.client('s3', region_name='eu-central-1', 
+                                aws_access_key_id=settings.AWS_ACCESS_KEY_ID, 
+                                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+        s3.upload_file(Filename='static/' + self.scope['session']['name'], 
+                        Bucket=settings.AWS_STORAGE_BUCKET_NAME, 
+                        Key='upload/' + self.scope['session']['name'])
+        filename = self.scope['session']['name']
+        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.eu-central-1.amazonaws.com/upload/{filename}"
+        return {"command":"new_message",
+                "message": s3_url,
+                "filename": self.scope['session']['name'],
+                "from": self.scope['session']['author']}
 
 
     commands = {
         'fetch_messages': fetch_messages,
-        'new_message': new_message
+        'new_message': new_message,
+        'save_session': save_session
     }
 
 
@@ -62,7 +86,6 @@ class ChatConsumer(WebsocketConsumer):
     def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.user = self.scope['user']
-        print("user", self.user)
         self.room_group_name = 'chat_%s' % self.room_name
         # Join room group
         async_to_sync(self.channel_layer.group_add)(
@@ -81,36 +104,12 @@ class ChatConsumer(WebsocketConsumer):
 
 
     # Receive message from WebSocket
-    def receive(self, *args, **kwargs):
-        print(kwargs.keys())
-        print()
-        self.scope['session']['type_file'] = 'txt'
-        #del self.scope['session']['type_file']
-        if 'type_file' in self.scope['session']:
-             print('yes')
-        
+    def receive(self, **kwargs):        
         if 'bytes_data' in kwargs.keys():
-            #image
-            stream = io.BytesIO(kwargs['bytes_data'])
-            image = Image.open(stream).convert("RGBA")
-            image.save("static/foto.png")
-            stream.close()
-
-
-            s3 = boto3.client('s3', region_name='eu-central-1', 
-                                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID, 
-                                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-            s3.upload_file(Filename='static/foto.png', Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key='upload/newfile.png')
-            filename = 'newfile.png'
-            s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.eu-central-1.amazonaws.com/upload/{filename}"
-            #kwargs['text_data'] = json.dumps({"command":"new_message","message": s3_url,"from":"admin"})
-            data = {"command":"new_message","message": s3_url,"from":"admin"}
-            #print(kwargs['bytes_data'].decode("utf-8"))
+            data = self.save_file(kwargs['bytes_data'])
         else:
             data = json.loads(kwargs['text_data'])
-
-        
-        #self.commands[data['command']](self, data)
+        self.commands[data['command']](self, data)
 
 
     def send_chat_message(self, message):
@@ -137,3 +136,6 @@ class ChatConsumer(WebsocketConsumer):
 
         # Send message to WebSocket
         self.send(text_data=json.dumps(message))
+
+
+

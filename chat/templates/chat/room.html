@@ -219,26 +219,28 @@
 
   function createMessage(data){
     let author = data['author'];
-
+    
     let msgListTag = document.createElement('li');
-    //let imgTag = document.createElement('img');
-    let pTag = document.createElement('p');
-    pTag.textContent = author + ' ' + data['message'];
-
-
-
-    //imgTag.src = 'http://emilcarlsson.se/assets/mikeross.png';
 
     if(author === userName){
       msgListTag.class = 'sent';
       //msgListTag.style.cssText = 'color: blue;'
     } else {
-
       msgListTag.className = 'replies';
     }
 
-    //msgListTag.appendChild(imgTag);
-    msgListTag.appendChild(pTag);
+    let tag;
+
+    if (data['message'].startsWith('https://kpi-chat')){
+      tag = document.createElement('a');
+      tag.href = data['message'];
+      tag.textContent = author + ' ' + data['filename']; 
+    } else {
+      tag = document.createElement('p');  
+      tag.textContent = author + ' ' + data['message'];
+    }
+    
+    msgListTag.appendChild(tag);
 
     document.querySelector('#chat-log').appendChild(msgListTag);
   }
@@ -283,9 +285,11 @@
     reader.onload = function(e) {
       rawData = e.target.result;
       let data = {
-        "author": userName,
-        "type": file.type,
-        "name": file.name,
+        'author': userName,
+        'type': file.type,
+        'name': file.name,
+        'command': 'save_session'
+
         //"bytes_data": String.fromCharCode.apply(null, new Uint16Array(rawData))
       };
       
