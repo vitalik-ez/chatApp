@@ -6,13 +6,10 @@ from django.contrib.auth import get_user_model
 
 
 import sys
-from PIL import Image
-import io
+
 
 import boto3
 from django.conf import settings
-from fpdf import FPDF 
-from base64 import b64decode
 
 User = get_user_model()
 
