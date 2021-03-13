@@ -219,6 +219,7 @@
 
   function createMessage(data){
     let author = data['author'];
+    console.log(data['timestamp']);
     let time = new Date(data['timestamp']);
     let msgListTag = document.createElement('li');
     if(author === userName){
@@ -233,10 +234,12 @@
     if (data['message'].startsWith('https://kpi-chat')){
       tag = document.createElement('a');
       tag.href = data['message'];
-      tag.textContent = `${time.toTimeString().split(' ')[0]} ${author} ${data['filename']}`; 
+      tag.textContent = `${time.getMonth()+1}.${time.getDate()}.${time.getFullYear()} 
+      ${time.toTimeString().split(' ')[0]} ${author} ${data['filename']}`; 
     } else {
       tag = document.createElement('p');  
-      tag.textContent = `${time.toTimeString().split(' ')[0]} ${author} ${data['message']}`;
+      tag.textContent = `${time.getMonth()+1}.${time.getDate()}.${time.getFullYear()} 
+      ${time.toTimeString().split(' ')[0]} ${author} ${data['message']}`;
 
     }
     
